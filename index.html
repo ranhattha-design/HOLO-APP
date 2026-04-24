@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="data:,">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HOLO-ARCHITECT PRO</title>
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700;800&family=JetBrains+Mono:wght@300;400;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/style.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cannon.js/0.6.2/cannon.min.js"></script>
+</head>
+<body>
+
+<div id="scan-overlay"></div>
+<div id="sel-box"></div>
+
+<div id="mode-bar">
+  <button class="mt-btn active" id="btn-build" onclick="switchTab('build')">⬡ BUILD</button>
+  <button class="mt-btn" id="btn-animate" onclick="switchTab('animate')">◈ ANIMATE</button>
+  <button class="mt-btn" id="btn-preview" onclick="switchTab('preview')">▶ PREVIEW</button>
+</div>
+
+<div id="panel">
+  <div id="panel-header" style="display: flex; justify-content: space-between; align-items: center; padding: 16px 18px 14px;">
+    <div>
+      <div class="logo-mark">HOLO·ARCH</div>
+      <div class="logo-sub">PRO EDITION · v3.0</div>
+    </div>
+    <div style="width: 85px;">
+      <div style="font-size: 8px; color: var(--c-yellow); margin-bottom: 4px; letter-spacing: 1px; font-family: var(--font-ui);">💡 LIGHT</div>
+      <input type="range" min="0.1" max="5.0" step="0.1" value="1.0" oninput="updateSceneLight(this.value)" style="width: 100%;">
+    </div>
+  </div>
+  <div id="panel-content">
+
+    <div id="ptab-build" class="ptab active">
+      <div class="sec accent-green">
+        <div class="sec-label green">↓ Import</div>
+        <div id="drop-zone" onclick="document.getElementById('file-input').click()">
+          <div class="dz-icon">📂</div>
+          <div class="dz-text">DRAG & DROP / CLICK</div>
+          <div class="dz-sub">Import .html file or hologram viewer</div>
+        </div>
+        <input type="file" id="file-input" accept=".html" style="display:none" onchange="importHTMLFile(this)">
+        <div id="import-status">No file loaded</div>
+        <div id="import-preview">
+          <select class="sel" id="import-element-sel"></select>
+          <div class="g2" style="margin-bottom:6px;">
+            <div>
+              <div style="font-size:8px;color:var(--c-dim);margin-bottom:3px;letter-spacing:1px;">COLOR MODE</div>
+              <select class="sel" id="import-color-mode" style="margin-bottom:0;">
+                <option value="original">Original</option>
+                <option value="single">Single</option>
+                <option value="gradient">Gradient</option>
+              </select>
+            </div>
+            <div>
+              <div class="row" style="margin-bottom:3px;"><span style="font-size:8px;color:var(--c-dim);letter-spacing:1px;">DENSITY</span></div>
+              <input type="range" min="1" max="20" step="1" value="8" id="import-density" style="width:100%;">
+            </div>
+          </div>
+          <div class="g2" style="margin-bottom:8px;">
+            <div>
+              <div style="font-size:8px;color:var(--c-dim);margin-bottom:3px;letter-spacing:1px;">SCALE</div>
+              <input type="range" min="0.5" max="5" step="0.1" value="1.5" id="import-scale" style="width:100%;">
+            </div>
+            <div>
+              <div style="font-size:8px;color:var(--c-dim);margin-bottom:3px;letter-spacing:1px;">NODE SIZE</div>
+              <input type="range" min="0.05" max="0.4" step="0.01" value="0.12" id="import-nodesize" style="width:100%;">
+            </div>
+          </div>
+          <div style="display:flex;gap:12px;margin-bottom:8px;">
+            <label class="chk-row" style="margin-bottom:0;"><input type="checkbox" id="import-edges" checked> Edges</label>
+            <label class="chk-row" style="margin-bottom:0;color:var(--c-orange);"><input type="checkbox" id="import-3d" checked> 3D Depth</label>
+          </div>
+          <button class="btn big success" onclick="placeImportedElement()">✦ PLACE IN SCENE</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-label">① Guide Shapes</div>
+        <div class="g3">
+          <button class="btn" onclick="addGuide('box')">■ CUBE</button>
+          <button class="btn" onclick="addGuide('sphere')">● SPHERE</button>
+          <button class="btn" onclick="addGuide('cylinder')">⬭ CYLNDR</button>
+          <button class="btn" onclick="addGuide('cone')">▲ CONE</button>
+          <button class="btn" onclick="addGuide('torus')">◎ TORUS</button>
+          <button class="btn" onclick="addGuide('torusknot')">∞ KNOT</button>
+          <button class="btn" onclick="addGuide('octahedron')">◆ OCTA</button>
+          <button class="btn" onclick="addGuide('tetra')">△ TETRA</button>
+          <button class="btn" onclick="addGuide('icosa')">⬡ ICOSA</button>
+          <button class="btn" onclick="addGuide('dodeca')">⬠ DODECA</button>
+          <button class="btn" onclick="addGuide('pyramid')">⏏ PYRMID</button>
+          <button class="btn" onclick="addGuide('diamond')">◈ DIAMND</button>
+          <button class="btn" onclick="addGuide('plane')">▬ PLANE</button>
+          <button class="btn" onclick="addGuide('ring')">○ RING</button>
+          <button class="btn" onclick="addGuide('tube')">〜 TUBE</button>
+          <button class="btn" onclick="addGuide('lathe')">⌀ LATHE</button>
+          <button class="btn" onclick="addGuide('arch')">⌒ ARCH</button>
+          <button class="btn" onclick="addGuide('star')">★ STAR</button>
+          <button class="btn" onclick="addGuide('heart')">♥ HEART</button>
+          <button class="btn" onclick="addGuide('flatslab')">▭ SLAB</button>
+          <button class="btn" onclick="addGuide('tallpillar')">| PILLAR</button>
+          <button class="btn" onclick="addGuide('halfball')">◗ DOME</button>
+          <button class="btn" style="color:var(--c-pink);border-color:rgba(255,0,136,0.3);grid-column:span 3;" onclick="fitGuideToNode()">◰ FIT NODE TO SELECTED</button>
+        </div>
+          <button class="btn active full" style="margin-bottom:6px;" onclick="setMode('guide-select')">⊙ SELECT GUIDE</button>
+        <div class="g3">
+          <button class="btn" onclick="setTransformMode('translate')">⤢ MOVE</button>
+          <button class="btn" onclick="setTransformMode('rotate')">↻ ROTATE</button>
+          <button class="btn" onclick="setTransformMode('scale')">⊠ SCALE</button>
+          <button class="btn danger span3" onclick="deleteSelectedGuide()">✕ DELETE GUIDE</button>
+        </div>
+      </div>
+
+      <div class="g3">
+        <button class="btn" style="color:#ffaa00; border-color:#ffaa00;" onclick="setMode('fix-node')">📌 FIX NODE</button>
+        <button class="btn" style="color:#00ffaa; border-color:#00ffaa;" onclick="setMode('merge-nodes')">🔗 MERGE</button>
+        <button class="btn" style="color:#ff00aa; border-color:#ff00aa;" onclick="setMode('make-joint')">🦴 JOINT</button>
+        <button class="btn" style="color:#00ccff;border-color:rgba(0,200,255,0.5);background:rgba(0,100,150,0.15);grid-column:span 3;" onclick="setMode('attach-node')">🧲 ATTACH NODE TO MODEL</button>
+      </div>
+
+      <div class="sec">
+        <div class="sec-label">② Hologram Nodes</div>
+        <select class="sel" id="shape-sel" onchange="curShape=this.value; updateFlatControls()">
+          <option value="sphere">● Sphere</option>
+          <option value="cube">■ Cube</option>
+          <option value="diamond">◆ Diamond</option>
+          <option value="tetra">▲ Pyramid</option>
+          <option value="plane">▬ Flat Plane</option>
+          <option value="roundbox">▤ Rounded Box</option>
+          <option value="disc">◉ Disc</option>
+          <option value="ring">◎ Ring</option>
+          <option value="rod">| Rod / Stick</option>
+          <option value="blade">⬜ Blade</option>
+          <option value="wrap">⬡ WRAP · Auto Surface</option>
+        </select>
+        <div class="row">
+          <span class="row-label">Size</span>
+          <input type="range" min="0.05" max="2.0" step="0.01" value="0.15" oninput="updateNodeSize(this.value)">
+          <span class="val" id="v-size">0.15</span>
+        </div>
+        <div id="flat-controls">
+          <div class="row"><span class="row-label" style="color:#dd44ff;">Width</span><input type="range" min="0.05" max="3.0" step="0.05" value="1.0" id="flat-w" oninput="flatW=parseFloat(this.value);document.getElementById('v-fw').textContent=this.value"><span class="val" id="v-fw" style="color:#dd44ff;">1.0</span></div>
+          <div class="row"><span class="row-label" style="color:#dd44ff;">Height</span><input type="range" min="0.05" max="3.0" step="0.05" value="1.0" id="flat-h" oninput="flatH=parseFloat(this.value);document.getElementById('v-fh').textContent=this.value"><span class="val" id="v-fh" style="color:#dd44ff;">1.0</span></div>
+          <div class="row"><span class="row-label" style="color:#dd44ff;">Thick</span><input type="range" min="0.01" max="1.0" step="0.01" value="0.05" id="flat-t" oninput="flatT=parseFloat(this.value);document.getElementById('v-ft').textContent=this.value"><span class="val" id="v-ft" style="color:#dd44ff;">0.05</span></div>
+        </div>
+        <div class="g2">
+          <button class="btn" onclick="setMode('add')">⊕ 1-NODE</button>
+          <button class="btn" style="color:var(--c-orange);border-color:rgba(255,100,0,0.3);" onclick="setMode('fill')">▤ GRID FILL</button>
+        </div>
+        <div class="row"><span class="row-label" style="color:var(--c-orange);">Density</span><input type="range" min="2" max="15" step="1" value="5" id="density-sl" oninput="document.getElementById('v-den').textContent=this.value"><span class="val" id="v-den" style="color:var(--c-orange);">5</span></div>
+        <div class="row"><span class="row-label" style="color:var(--c-orange);">Spread</span><input type="range" min="1" max="10" step="0.5" value="4" id="spread-sl" oninput="document.getElementById('v-spr').textContent=this.value"><span class="val" id="v-spr" style="color:var(--c-orange);">4</span></div>
+        <div style="display:flex;gap:12px;margin-bottom:8px;">
+          <label class="chk-row" style="margin-bottom:0;"><input type="checkbox" id="chk-fix" checked> 📌 FIX</label>
+          <label class="chk-row" style="margin-bottom:0;color:var(--c-cyan);"><input type="checkbox" id="chk-expand"> 🔲 AUTO COVER</label>
+        </div>
+        <div class="g2">
+          <button class="btn" onclick="setMode('connect')">⟿ CONNECT</button>
+          <button class="btn danger" onclick="setMode('delete')">✕ DELETE</button>
+          <button class="btn danger" onclick="setMode('drag-delete')" style="background:rgba(255,60,0,0.18);border-color:rgba(255,100,0,0.5);color:#ff6600;" title="Drag over nodes to delete them">🔥 DRAG DEL</button>
+          <button class="btn active full" style="color:var(--c-yellow);border-color:rgba(255,240,0,0.4);" onclick="setMode('node-select')">🎯 SELECT NODE</button>
+        </div>
+        
+        <button class="btn success full" style="margin-bottom:8px; background:rgba(0,255,136,0.15); font-size:11px; padding:10px;" onclick="duplicateSelectedNode()">📑 COPY PERFECT NODE</button>
+
+        <div id="node-edit-panel">
+          <div class="node-edit-header">✏ SELECTED NODE</div>
+          <div id="sel-node-info">none selected</div>
+          <div class="row"><span class="row-label" style="color:#ffaa00;">Opacity</span><input type="range" min="0" max="1" step="0.01" value="0.8" id="sel-opacity" oninput="selNodeOpacity(this.value)"><span class="val" id="sv-opacity" style="color:#ffaa00;">0.8</span></div>
+          <div class="row"><span class="row-label">Size</span><input type="range" min="0.05" max="2.0" step="0.01" value="0.15" id="sel-size" oninput="selNodeSize(this.value)"><span class="val" id="sv-size">0.15</span></div>
+          <div class="row"><span class="row-label" style="color:var(--c-green);">Width</span><input type="range" min="0.05" max="3.0" step="0.05" value="1.0" id="sel-fw" oninput="selNodeFlatW(this.value)"><span class="val" id="sv-fw" style="color:var(--c-green);">1.0</span></div>
+          <div class="row"><span class="row-label" style="color:var(--c-green);">Height</span><input type="range" min="0.05" max="3.0" step="0.05" value="1.0" id="sel-fh" oninput="selNodeFlatH(this.value)"><span class="val" id="sv-fh" style="color:var(--c-green);">1.0</span></div>
+          <div class="row"><span class="row-label" style="color:var(--c-green);">Thick</span><input type="range" min="0.01" max="1.0" step="0.01" value="0.05" id="sel-ft" oninput="selNodeFlatT(this.value)"><span class="val" id="sv-ft" style="color:var(--c-green);">0.05</span></div>
+          <select class="sel" id="sel-shape" onchange="selNodeShape(this.value)">
+            <option value="sphere">● Sphere</option>
+            <option value="cube">■ Cube</option>
+            <option value="diamond">◆ Diamond</option>
+            <option value="tetra">▲ Pyramid</option>
+            <option value="plane">▬ Flat Plane</option>
+            <option value="disc">◉ Disc</option>
+            <option value="ring">◎ Ring</option>
+            <option value="rod">| Rod</option>
+            <option value="blade">⬜ Blade</option>
+            <option value="roundbox">◼ RoundBox</option>
+            <option value="wrap">⬡ WRAP · Auto Surface</option>
+          </select>
+          <label style="display:flex;align-items:center;gap:8px;font-size:10px;color:#ff6666;cursor:pointer;margin-bottom:8px;font-family:var(--font-ui);letter-spacing:1px;">
+            <input type="checkbox" id="sel-solid" onchange="selNodeSolid(this.checked)"> 🧱 SOLID MODE
+          </label>
+          <div class="row"><span class="row-label" style="color:var(--c-green);">Spin ↺</span><input type="range" min="-10" max="10" step="0.5" value="0" id="sel-spin" oninput="selNodeSpin(this.value)"><span class="val" id="sv-spin" style="color:var(--c-green);">0</span></div>
+          <div style="font-size:9px;color:#cc88ff;letter-spacing:2px;margin-bottom:6px;font-family:var(--font-ui);">TRANSFORM MODE</div>
+          <div class="g3" style="margin-bottom:6px;">
+            <button class="btn active" id="ntc-translate" onclick="setNodeTransformMode('translate')">⤢ MOVE</button>
+            <button class="btn" id="ntc-rotate" onclick="setNodeTransformMode('rotate')">↻ ROT</button>
+            <button class="btn" id="ntc-scale" onclick="setNodeTransformMode('scale')">⊠ SCL</button>
+          </div>
+          <button class="btn danger" style="width:100%; margin-bottom:6px; background:rgba(255,0,0,0.2); border-color:red; color:white;" onclick="cutHoleInNode()">✂ CUT HOLE (USING GUIDE)</button>
+          <button class="btn" style="width:100%;color:var(--c-dim);border-color:rgba(100,100,100,0.2);" onclick="deselectNode()">✕ DESELECT</button>
+        </div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-label">FX & Glow</div>
+    
+        <div class="row"><span class="row-label">Bright</span><input type="range" min="0.1" max="1.0" step="0.1" value="0.8" oninput="updateBrightness(this.value)"><span class="val" id="v-bright">0.8</span></div>
+        <div class="row"><span class="row-label" style="color:#ffaa00;">Opacity</span><input type="range" min="0" max="1" step="0.01" value="0.8" id="opacity-sl" oninput="updateOpacity(this.value)"><span class="val" id="v-opacity" style="color:#ffaa00;">0.8</span></div>
+      </div>
+
+      <div class="sec">
+        <div class="sec-label">Node Color</div>
+        <div id="color-grid"></div>
+      </div>
+
+    </div>
+
+    <div id="ptab-animate" class="ptab">
+      <div class="sec">
+        <div class="sec-label">Multi-Select</div>
+        <button class="btn big" onclick="setMode('select-area')">⬚ DRAG SELECT BOX</button>
+        <div class="g2">
+          <button class="btn" onclick="setMode('move-group')">⤢ MOVE GROUP</button>
+          <button class="btn" onclick="setMode('rotate-group')">↻ ROTATE GROUP</button>
+          <button class="btn" onclick="setMode('scale-group')">⊠ SCALE GROUP</button>
+          <button class="btn" style="color:#ff44ff;border-color:rgba(255,0,200,0.35);background:rgba(100,0,100,0.15);grid-column:span 2;" onclick="copySelectedNodes()">⧉ COPY SELECTED NODES</button>
+          <button class="btn danger full" onclick="clearSelection()">⊘ CLEAR SELECTION</button>
+        </div>
+      </div>
+
+      <div class="sec" style="border-color:rgba(255,150,0,0.35);background:rgba(255,100,0,0.04);">
+        <div class="sec-label" style="color:var(--c-orange);">💾 MEMORY SELECT</div>
+        <button class="btn big" style="color:#ffcc44;border-color:rgba(255,180,0,0.4);background:rgba(80,50,0,0.2);margin-bottom:8px;" onclick="saveMemorySelection()">＋ SAVE CURRENT SELECTION</button>
+        <div id="memory-list">
+          <div style="font-size:9px;color:var(--c-dim);text-align:center;padding:8px;font-family:var(--font-ui);letter-spacing:1px;">No memories saved yet.</div>
+        </div>
+      </div>
+
+      <div class="sec accent-violet">
+        <div class="sec-label violet">◈ Multi-Track Timeline</div>
+        
+        <div class="g2" style="margin-bottom:8px;">
+          <button class="btn active" id="btn-track1" onclick="switchTrack(1)">▶ TRACK 1</button>
+          <button class="btn" id="btn-track2" style="border-color:#00ff88; color:#00ff88;" onclick="switchTrack(2)">⚡ TRACK 2</button>
+        </div>
+
+        <div id="kf-progress-bar"><div id="kf-progress-fill"></div></div>
+        <div id="kf-timeline">
+          <div class="kf-empty" id="kf-empty-msg">No keyframes yet.<br>Position nodes & save.</div>
+        </div>
+        
+        <div class="g2" style="margin-bottom:8px;">
+          <button class="btn big" style="color:#ff44ff;border-color:rgba(200,0,200,0.4);background:rgba(100,0,120,0.2);margin-bottom:0;" onclick="saveKeyframe()">📷 SAVE KEYFRAME</button>
+          <button class="btn danger" style="margin-bottom:0;" onclick="clearKeyframes()">🗑 CLEAR</button>
+        </div>
+
+        <div class="g2" style="margin-bottom:8px;">
+          <button class="btn" style="color:var(--c-cyan); border-color:rgba(0,229,255,0.4);" onclick="copyAnimation()">📋 COPY ANIM</button>
+          <button class="btn" style="color:var(--c-green); border-color:rgba(0,255,136,0.4);" onclick="pasteAnimation()">✨ PASTE ANIM</button>
+        </div>
+        
+        <div class="row">
+          <span class="row-label" id="lbl-speed" style="color:#cc44ff;">T1 Speed</span>
+          <input type="range" min="0.1" max="10.0" step="0.1" value="1.0" id="anim-speed-sl" oninput="updateTrackSpeed(this.value)">
+          <span class="val" id="v-track-speed" style="color:#cc44ff;">1.0</span>
+        </div>
+      </div>
+
+      <div class="sec" style="border-color:var(--c-yellow); background:rgba(255,200,0,0.05);">
+         <div class="sec-label" style="color:var(--c-yellow);">⏲ START TIMER (SECONDS)</div>
+            <div class="row">
+           <input type="number" id="start-delay-input" value="0" min="0" step="1" style="width:70%; background:rgba(0,0,0,0.3); border:1px solid var(--c-border); color:#fff; padding:4px; font-family:var(--font-mono);">
+         <button class="btn success" style="flex:1;" onclick="setStartTimer()">SET</button>
+        </div>
+        <div id="timer-display" style="font-size:12px; color:var(--c-yellow); text-align:center; font-family:var(--font-ui); letter-spacing:1px; margin-top:4px; font-weight:bold;">TIMER: OFF</div>
+        </div>
+
+      <div class="sec">
+        <div class="sec-label">System</div>
+        <label class="chk-row" style="color:#ff4444; margin-bottom:10px; justify-content:center; background:rgba(255,0,0,0.1); padding:8px; border-radius:4px; border:1px solid rgba(255,0,0,0.2);">
+            <input type="checkbox" id="chk-no-loop" onchange="isNoLoop = this.checked; flash(this.checked ? '🛑 ANIMATION REPEAT: OFF' : '🔁 ANIMATION REPEAT: ON');"> 🛑 X REPEAT (NO LOOP)
+        </label>
+        
+        <button class="btn big danger" onclick="clearAll()">⊗ CLEAR ENTIRE SCENE</button>
+        <button class="btn big success" onclick="exportViewer()">⟐ EXPORT HOLOGRAM VIEWER</button>
+      </div>
+    </div>
+
+    <div id="ptab-preview" class="ptab">
+      <div class="sec" style="border-color:rgba(0,220,255,0.3);background:rgba(0,150,255,0.04);">
+        <div class="sec-label">▶ Preview Mode</div>
+        <div style="font-size:10px;color:var(--c-dim);line-height:1.8;font-family:var(--font-ui);letter-spacing:1px;">
+          Animation playing.<br>Guides &amp; grid hidden.<br>Orbit controls active.
+        </div>
+        
+        <button class="btn big success" style="margin-top:12px; border-color:var(--c-cyan); color:#fff; background:rgba(0,180,255,0.2);" onclick="resetAnimation()">↺ RESET ANIMATION</button>
+
+        <div style="margin-top:10px;padding:10px;border:1px solid rgba(0,200,255,0.15);border-radius:4px;background:rgba(0,50,100,0.1);">
+          <div style="font-size:9px;color:var(--c-dim);margin-bottom:4px;font-family:var(--font-ui);letter-spacing:1px;">KEYFRAMES</div>
+          <div id="preview-kf-count" style="font-size:18px;font-weight:800;color:var(--c-cyan);font-family:var(--font-ui);">0</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="canvas-wrap"></div>
+
+<div id="statusbar">
+  <div class="sb-item">NODES: <span id="st-nodes">0</span></div>
+  <div class="sb-item">EDGES: <span id="st-edges">0</span></div>
+  <div class="sb-item" id="st-mode">MODE: <span>BUILD</span></div>
+  <div id="flash-msg"></div>
+</div>
+
+<div id="mem-name-modal">
+  <div id="mem-name-box">
+    <div class="modal-title">💾 SAVE MEMORY</div>
+    <div style="font-size:9px;color:var(--c-dim);margin-bottom:10px;font-family:var(--font-ui);letter-spacing:1px;text-align:center;">ENTER A NAME FOR THIS SELECTION</div>
+    <input type="text" id="mem-name-input" placeholder="e.g. Left Wing Nodes" maxlength="24"
+      onkeydown="if(event.key==='Enter')confirmSaveMemory();if(event.key==='Escape')cancelSaveMemory();">
+    <div class="mem-modal-btns">
+      <button class="btn success" onclick="confirmSaveMemory()">✓ SAVE</button>
+      <button class="btn danger" onclick="cancelSaveMemory()">✕ CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/csg-engine.js"></script>
+<script src="js/setup.js"></script>
+<script src="js/functions.js"></script>
+<script src="js/main.js"></script>
+
+</body>
+</html>
